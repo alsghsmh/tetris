@@ -194,8 +194,6 @@ function acceleratedDrop() {
     if (!collides({ ...piece, y: piece.y + 1 })) {
       piece.y++;
       distance++;
-      score += 2;
-      updateHud();
       beep(150 + Math.min(distance, 14) * 22, 0.018, "square", 0.018);
       delay = Math.max(18, delay * 0.78);
       setTimeout(step, delay);
@@ -231,7 +229,6 @@ function softDrop() {
   if (!running || paused || acceleratedDropping) return;
   if (!collides({ ...piece, y: piece.y + 1 })) {
     piece.y++;
-    score += 1;
   } else {
     lockPiece();
   }
