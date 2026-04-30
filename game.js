@@ -71,6 +71,9 @@ let particles = [];
 let audioCtx = null;
 let acceleratedDropping = false;
 let dropToken = 0;
+let fastDropping = false;
+let fastDropCounter = 0;
+let fastDropDelay = 54;
 let bgmTimer = null;
 let bgmStep = 0;
 let musicGain = null;
@@ -208,6 +211,20 @@ function acceleratedDrop() {
   };
 
   step();
+}
+
+function startFastDrop() {
+  if (!running || paused || acceleratedDropping || fastDropping) return;
+  fastDropping = true;
+  fastDropCounter = 0;
+  fastDropDelay = 54;
+  beep(180, 0.035, "sawtooth", 0.045);
+}
+
+function stopFastDrop() {
+  fastDropping = false;
+  fastDropCounter = 0;
+  fastDropDelay = 54;
 }
 
 function softDrop() {
@@ -387,6 +404,16 @@ function update(time = 0) {
   const delta = time - lastTime;
   lastTime = time;
   if (running && !paused) {
+    if (fastDropping) {
+      fastDropCounter += delta;
+      fastDropDelay = Math.max(22, fastDropDelay - delta * 0.045);
+      while (fastDropCounter > fastDropDelay) {
+        softDrop();
+        fastDropCounter -= fastDropDelay;
+        beep(120 + Math.random() * 80, 0.012, "square", 0.012);
+      }
+      dropCounter = 0;
+    }
     dropCounter += delta;
     if (dropCounter > Math.max(120, 820 - level * 58)) {
       softDrop();
@@ -499,6 +526,7 @@ function newGame() {
   });
   dropToken++;
   acceleratedDropping = false;
+  stopFastDrop();
   grid = emptyGrid();
   piece = null;
   nextPiece = randPiece();
@@ -520,6 +548,7 @@ function newGame() {
 function gameOver() {
   dropToken++;
   acceleratedDropping = false;
+  stopFastDrop();
   running = false;
   stopBgm();
   showToast("GAME OVER");
@@ -549,19 +578,32 @@ const startBtn = document.querySelector("#startBtn");
 startBtn.addEventListener("pointerdown", unlockAudio);
 startBtn.addEventListener("click", newGame);
 document.querySelector("#rotateBtn").addEventListener("click", turn);
-document.querySelector("#dropBtn").addEventListener("click", acceleratedDrop);
 document.querySelector("#holdBtn").addEventListener("click", hold);
 bindHoldButton(document.querySelector("#leftBtn"), () => move(-1));
 bindHoldButton(document.querySelector("#rightBtn"), () => move(1));
+const dropBtn = document.querySelector("#dropBtn");
+dropBtn.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  startFastDrop();
+});
+dropBtn.addEventListener("pointerup", stopFastDrop);
+dropBtn.addEventListener("pointercancel", stopFastDrop);
+dropBtn.addEventListener("pointerleave", stopFastDrop);
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "ArrowLeft") move(-1);
   if (event.key === "ArrowRight") move(1);
   if (event.key === "ArrowUp") turn();
   if (event.key === "ArrowDown") softDrop();
-  if (event.code === "Space") acceleratedDrop();
+  if (event.code === "Space") {
+    event.preventDefault();
+    startFastDrop();
+  }
   if (event.key.toLowerCase() === "c") hold();
   if (event.key.toLowerCase() === "p") paused = !paused;
+});
+document.addEventListener("keyup", (event) => {
+  if (event.code === "Space") stopFastDrop();
 });
 
 let touchStart = null;
@@ -573,7 +615,10 @@ boardCanvas.addEventListener("pointerup", (event) => {
   const dx = event.clientX - touchStart.x;
   const dy = event.clientY - touchStart.y;
   if (Math.abs(dx) < 18 && Math.abs(dy) < 18) turn();
-  else if (dy > 48) acceleratedDrop();
+  else if (dy > 48) {
+    startFastDrop();
+    setTimeout(stopFastDrop, 260);
+  }
   else if (dx > 34) move(1);
   else if (dx < -34) move(-1);
   touchStart = null;
