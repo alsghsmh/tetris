@@ -69,6 +69,11 @@ let lastTime = 0;
 let dropCounter = 0;
 let particles = [];
 let audioCtx = null;
+let acceleratedDropping = false;
+let dropToken = 0;
+let bgmTimer = null;
+let bgmStep = 0;
+let musicGain = null;
 
 function emptyGrid() {
   return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
@@ -153,8 +158,9 @@ function spawn() {
 }
 
 function hold() {
-  if (!running || paused || !canHold) return;
-  beep(250, 0.06, "sine", 0.06);
+  if (!running || paused || !canHold || acceleratedDropping) return;
+  beep(260, 0.05, "triangle", 0.07);
+  beep(520, 0.05, "sine", 0.045);
   const current = piece.type;
   if (!heldPiece) {
     heldPiece = clonePiece(piece);
@@ -167,20 +173,45 @@ function hold() {
   canHold = false;
 }
 
-function hardDrop() {
-  if (!running || paused) return;
+function acceleratedDrop() {
+  if (!running || paused || acceleratedDropping) return;
+  acceleratedDropping = true;
+  const token = ++dropToken;
   let distance = 0;
-  while (!collides({ ...piece, y: piece.y + 1 })) {
-    piece.y++;
-    distance++;
-  }
-  score += distance * 2;
-  beep(90, 0.08, "sawtooth", 0.07);
-  lockPiece();
+  let delay = 86;
+  beep(120, 0.08, "sawtooth", 0.075);
+
+  const step = () => {
+    if (token !== dropToken) return;
+    if (!running || paused) {
+      acceleratedDropping = false;
+      return;
+    }
+
+    if (!collides({ ...piece, y: piece.y + 1 })) {
+      piece.y++;
+      distance++;
+      score += 2;
+      updateHud();
+      beep(150 + Math.min(distance, 14) * 22, 0.018, "square", 0.018);
+      delay = Math.max(18, delay * 0.78);
+      setTimeout(step, delay);
+      return;
+    }
+
+    acceleratedDropping = false;
+    if (distance > 0) {
+      burstLanding();
+      beep(85, 0.09, "sawtooth", 0.07);
+    }
+    lockPiece();
+  };
+
+  step();
 }
 
 function softDrop() {
-  if (!running || paused) return;
+  if (!running || paused || acceleratedDropping) return;
   if (!collides({ ...piece, y: piece.y + 1 })) {
     piece.y++;
     score += 1;
@@ -197,16 +228,16 @@ function lockPiece() {
 }
 
 function move(dir) {
-  if (!running || paused) return;
+  if (!running || paused || acceleratedDropping) return;
   const moved = { ...piece, x: piece.x + dir };
   if (!collides(moved)) {
     piece.x += dir;
-    beep(180 + dir * 20, 0.025, "square", 0.025);
+    beep(dir < 0 ? 190 : 235, 0.026, "square", 0.032);
   }
 }
 
 function turn() {
-  if (!running || paused) return;
+  if (!running || paused || acceleratedDropping) return;
   const rotated = { ...piece, matrix: rotate(piece.matrix) };
   const kicks = [0, -1, 1, -2, 2];
   for (const kick of kicks) {
@@ -214,7 +245,8 @@ function turn() {
     if (!collides(rotated)) {
       piece.matrix = rotated.matrix;
       piece.x = rotated.x;
-      beep(520, 0.04, "triangle", 0.05);
+      beep(610, 0.038, "triangle", 0.055);
+      beep(820, 0.03, "sine", 0.028);
       return;
     }
   }
@@ -312,6 +344,27 @@ function burstLine(line) {
   }
 }
 
+function burstLanding() {
+  piece.matrix.forEach((row, y) => {
+    row.forEach((value, x) => {
+      if (!value) return;
+      const px = (piece.x + x) * BLOCK + BLOCK / 2;
+      const py = (piece.y + y) * BLOCK + BLOCK / 2;
+      for (let i = 0; i < 4; i++) {
+        particles.push({
+          x: px,
+          y: py,
+          vx: (Math.random() - 0.5) * 4,
+          vy: Math.random() * -3,
+          life: 18 + Math.random() * 10,
+          color: COLORS[piece.type],
+          size: 2 + Math.random() * 3,
+        });
+      }
+    });
+  });
+}
+
 function drawFx() {
   fx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
   particles = particles.filter((p) => p.life > 0);
@@ -373,6 +426,62 @@ function beep(freq, duration, type = "sine", volume = 0.05) {
   osc.stop(audioCtx.currentTime + duration);
 }
 
+function musicTone(freq, duration, type = "triangle", volume = 0.04) {
+  if (!audioCtx || !musicGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const now = audioCtx.currentTime;
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, now);
+  gain.gain.setValueAtTime(0.001, now);
+  gain.gain.exponentialRampToValueAtTime(volume, now + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+  osc.connect(gain).connect(musicGain);
+  osc.start(now);
+  osc.stop(now + duration + 0.02);
+}
+
+function startBgm() {
+  stopBgm();
+  if (!audioCtx) return;
+  musicGain = audioCtx.createGain();
+  musicGain.gain.setValueAtTime(0.035, audioCtx.currentTime);
+  musicGain.connect(audioCtx.destination);
+  bgmStep = 0;
+  playBgmStep();
+}
+
+function stopBgm() {
+  clearTimeout(bgmTimer);
+  bgmTimer = null;
+  if (musicGain && audioCtx) {
+    const gainToStop = musicGain;
+    musicGain = null;
+    gainToStop.gain.cancelScheduledValues(audioCtx.currentTime);
+    gainToStop.gain.setTargetAtTime(0.001, audioCtx.currentTime, 0.08);
+    setTimeout(() => {
+      gainToStop.disconnect();
+    }, 220);
+  }
+}
+
+function playBgmStep() {
+  if (!running || !audioCtx) return;
+  if (paused) {
+    bgmTimer = setTimeout(playBgmStep, 180);
+    return;
+  }
+
+  const lead = [392, 466.16, 523.25, 587.33, 523.25, 466.16, 392, 349.23, 392, 523.25, 622.25, 698.46, 622.25, 523.25, 466.16, 392];
+  const bass = [98, 98, 116.54, 116.54, 130.81, 130.81, 87.31, 87.31];
+  const step = bgmStep % 16;
+  musicTone(lead[step], 0.115, step % 4 === 0 ? "square" : "triangle", step % 2 ? 0.025 : 0.035);
+  if (step % 2 === 0) musicTone(bass[(bgmStep / 2) % bass.length | 0], 0.18, "sawtooth", 0.022);
+  if (step % 4 === 2) musicTone(1760, 0.025, "square", 0.012);
+  bgmStep++;
+  bgmTimer = setTimeout(playBgmStep, Math.max(92, 150 - level * 4));
+}
+
 function unlockAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") audioCtx.resume();
@@ -380,6 +489,8 @@ function unlockAudio() {
 
 function newGame() {
   unlockAudio();
+  dropToken++;
+  acceleratedDropping = false;
   grid = emptyGrid();
   piece = null;
   nextPiece = randPiece();
@@ -395,10 +506,15 @@ function newGame() {
   updateHud();
   showToast("GO!");
   beep(660, 0.08, "triangle", 0.08);
+  beep(990, 0.06, "sine", 0.045);
+  startBgm();
 }
 
 function gameOver() {
+  dropToken++;
+  acceleratedDropping = false;
   running = false;
+  stopBgm();
   showToast("GAME OVER");
   beep(120, 0.35, "sawtooth", 0.08);
 }
@@ -424,7 +540,7 @@ function bindHoldButton(button, onPress) {
 
 document.querySelector("#startBtn").addEventListener("click", newGame);
 document.querySelector("#rotateBtn").addEventListener("click", turn);
-document.querySelector("#dropBtn").addEventListener("click", hardDrop);
+document.querySelector("#dropBtn").addEventListener("click", acceleratedDrop);
 document.querySelector("#holdBtn").addEventListener("click", hold);
 bindHoldButton(document.querySelector("#leftBtn"), () => move(-1));
 bindHoldButton(document.querySelector("#rightBtn"), () => move(1));
@@ -434,7 +550,7 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "ArrowRight") move(1);
   if (event.key === "ArrowUp") turn();
   if (event.key === "ArrowDown") softDrop();
-  if (event.code === "Space") hardDrop();
+  if (event.code === "Space") acceleratedDrop();
   if (event.key.toLowerCase() === "c") hold();
   if (event.key.toLowerCase() === "p") paused = !paused;
 });
@@ -448,7 +564,7 @@ boardCanvas.addEventListener("pointerup", (event) => {
   const dx = event.clientX - touchStart.x;
   const dy = event.clientY - touchStart.y;
   if (Math.abs(dx) < 18 && Math.abs(dy) < 18) turn();
-  else if (dy > 48) hardDrop();
+  else if (dy > 48) acceleratedDrop();
   else if (dx > 34) move(1);
   else if (dx < -34) move(-1);
   touchStart = null;

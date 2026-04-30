@@ -52,10 +52,10 @@ button {
   width: min(100vw, 520px);
   height: 100svh;
   margin: 0 auto;
-  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  padding: max(8px, env(safe-area-inset-top)) 10px max(8px, env(safe-area-inset-bottom));
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto auto;
-  gap: 10px;
+  gap: 8px;
 }
 
 .topbar,
@@ -77,8 +77,8 @@ button {
 }
 
 .topbar > div {
-  min-height: 54px;
-  padding: 8px 10px;
+  min-height: 48px;
+  padding: 7px 9px;
   border-radius: 8px;
 }
 
@@ -107,10 +107,8 @@ strong {
 
 #board,
 #fx {
-  width: auto;
-  max-width: 380px;
-  height: 100%;
-  max-height: 100%;
+  width: min(84vw, 360px, calc((100svh - 222px) / 2));
+  height: auto;
   aspect-ratio: 1 / 2;
   border-radius: 8px;
 }
@@ -132,10 +130,8 @@ strong {
 }
 
 .scanline {
-  width: auto;
-  max-width: 380px;
-  height: 100%;
-  max-height: 100%;
+  width: min(84vw, 360px, calc((100svh - 222px) / 2));
+  height: auto;
   aspect-ratio: 1 / 2;
   border-radius: 8px;
   overflow: hidden;
@@ -179,9 +175,9 @@ strong {
 }
 
 .mini {
-  height: 76px;
+  height: 62px;
   border-radius: 8px;
-  padding: 7px;
+  padding: 6px;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
@@ -189,14 +185,14 @@ strong {
 }
 
 .mini canvas {
-  width: 58px;
-  height: 58px;
+  width: 48px;
+  height: 48px;
   justify-self: end;
 }
 
 .primary {
   min-width: 100px;
-  height: 58px;
+  height: 52px;
   border-radius: 8px;
   background: linear-gradient(135deg, var(--hot), #7b4dff 52%, var(--cyan));
   color: #fff;
@@ -207,14 +203,14 @@ strong {
 .controls {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-  height: 70px;
+  gap: 7px;
+  height: 58px;
 }
 
 .pad-btn {
   border-radius: 8px;
   color: white;
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 900;
   line-height: 1;
 }
@@ -265,7 +261,9 @@ strong {
 
 @media (max-height: 690px) {
   .game-shell {
-    gap: 7px;
+    gap: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
   }
 
   .topbar > div {
@@ -278,7 +276,7 @@ strong {
   }
 
   .controls {
-    height: 58px;
+    height: 50px;
   }
 
   .mini {
@@ -293,12 +291,12 @@ strong {
 
   .primary {
     min-width: 86px;
-    height: 48px;
+    height: 44px;
   }
 
   #board,
   #fx,
   .scanline {
-    max-width: 90vw;
+    width: min(82vw, calc((100svh - 196px) / 2));
   }
 }
