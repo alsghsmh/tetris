@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#080716" />
+    <title>Neon Drop Tetris</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <section class="topbar" aria-label="게임 상태">
+        <div>
+          <span class="label">SCORE</span>
+          <strong id="score">0</strong>
+        </div>
+        <div>
+          <span class="label">LEVEL</span>
+          <strong id="level">1</strong>
+        </div>
+        <div>
+          <span class="label">COMBO</span>
+          <strong id="combo">0</strong>
+        </div>
+      </section>
+
+      <section class="play-area">
+        <canvas id="board" width="300" height="600" aria-label="테트리스 게임 보드"></canvas>
+        <canvas id="fx" width="300" height="600" aria-hidden="true"></canvas>
+        <div class="scanline" aria-hidden="true"></div>
+        <div id="toast" class="toast">READY</div>
+      </section>
+
+      <section class="side-panel" aria-label="다음 블록과 보관 블록">
+        <div class="mini">
+          <span class="label">HOLD</span>
+          <canvas id="hold" width="92" height="92"></canvas>
+        </div>
+        <button id="startBtn" class="primary">START</button>
+        <div class="mini">
+          <span class="label">NEXT</span>
+          <canvas id="next" width="92" height="92"></canvas>
+        </div>
+      </section>
+
+      <section class="controls" aria-label="모바일 조작">
+        <button id="leftBtn" class="pad-btn" aria-label="왼쪽">‹</button>
+        <button id="rotateBtn" class="pad-btn action" aria-label="회전">↻</button>
+        <button id="rightBtn" class="pad-btn" aria-label="오른쪽">›</button>
+        <button id="dropBtn" class="pad-btn drop" aria-label="빠르게 내리기">⇣</button>
+        <button id="holdBtn" class="pad-btn hold" aria-label="블록 보관">H</button>
+      </section>
+    </main>
+
+    <script src="game.js"></script>
+  </body>
+</html>
