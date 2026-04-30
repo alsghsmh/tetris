@@ -53,6 +53,14 @@ const levelEl = document.querySelector("#level");
 const comboEl = document.querySelector("#combo");
 const toast = document.querySelector("#toast");
 const shell = document.querySelector(".game-shell");
+const leaderboardModal = document.querySelector("#leaderboardModal");
+const leaderboardList = document.querySelector("#leaderboardList");
+const scoreForm = document.querySelector("#scoreForm");
+const playerNameInput = document.querySelector("#playerName");
+const finalScoreText = document.querySelector("#finalScoreText");
+const leaderboardBtn = document.querySelector("#leaderboardBtn");
+const closeLeaderboardBtn = document.querySelector("#closeLeaderboardBtn");
+const LEADERBOARD_KEY = "neon-drop-leaderboard";
 
 let grid;
 let piece;
@@ -65,6 +73,7 @@ let lines = 0;
 let combo = 0;
 let running = false;
 let paused = false;
+let scoreSubmitted = false;
 let lastTime = 0;
 let dropCounter = 0;
 let particles = [];
@@ -430,6 +439,82 @@ function updateHud() {
   comboEl.textContent = combo;
 }
 
+function loadLeaderboard() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LEADERBOARD_KEY) || "[]");
+    return Array.isArray(saved) ? saved : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLeaderboard(entries) {
+  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(entries.slice(0, 10)));
+}
+
+function renderLeaderboard() {
+  const entries = loadLeaderboard();
+  leaderboardList.innerHTML = "";
+  if (!entries.length) {
+    const empty = document.createElement("li");
+    empty.innerHTML = '<span class="rank-no">-</span><span class="rank-name">NO SCORES YET</span><span class="rank-score">0</span>';
+    leaderboardList.appendChild(empty);
+    return;
+  }
+
+  entries.forEach((entry, index) => {
+    const item = document.createElement("li");
+    const rank = document.createElement("span");
+    const name = document.createElement("span");
+    const points = document.createElement("span");
+    rank.className = "rank-no";
+    name.className = "rank-name";
+    points.className = "rank-score";
+    rank.textContent = `#${index + 1}`;
+    name.textContent = entry.name;
+    points.textContent = Number(entry.score || 0).toLocaleString("ko-KR");
+    item.append(rank, name, points);
+    leaderboardList.appendChild(item);
+  });
+}
+
+function openLeaderboard(askName = false) {
+  renderLeaderboard();
+  finalScoreText.textContent = `SCORE ${score.toLocaleString("ko-KR")}`;
+  scoreForm.classList.toggle("hidden", !askName || score <= 0 || scoreSubmitted);
+  leaderboardModal.classList.remove("hidden");
+  if (askName && score > 0 && !scoreSubmitted) {
+    playerNameInput.value = localStorage.getItem("neon-drop-player-name") || "";
+    setTimeout(() => playerNameInput.focus(), 60);
+  }
+}
+
+function closeLeaderboard() {
+  leaderboardModal.classList.add("hidden");
+}
+
+function submitScore(event) {
+  event.preventDefault();
+  if (score <= 0 || scoreSubmitted) return;
+  const rawName = playerNameInput.value.trim().toUpperCase();
+  const name = (rawName || "PLAYER").slice(0, 12);
+  const entries = loadLeaderboard();
+  entries.push({
+    name,
+    score,
+    level,
+    lines,
+    date: new Date().toISOString(),
+  });
+  entries.sort((a, b) => b.score - a.score);
+  saveLeaderboard(entries);
+  localStorage.setItem("neon-drop-player-name", name);
+  scoreSubmitted = true;
+  scoreForm.classList.add("hidden");
+  renderLeaderboard();
+  beep(740, 0.06, "triangle", 0.06);
+}
+
 function showToast(text) {
   toast.textContent = text;
   toast.classList.add("show");
@@ -558,6 +643,7 @@ function newGame() {
   level = 1;
   lines = 0;
   combo = 0;
+  scoreSubmitted = false;
   running = true;
   paused = false;
   spawn();
@@ -575,6 +661,9 @@ function gameOver() {
   stopBgm();
   showToast("GAME OVER");
   beep(120, 0.35, "sawtooth", 0.08);
+  if (score > 0) {
+    setTimeout(() => openLeaderboard(true), 720);
+  }
 }
 
 function bindHoldButton(button, onPress) {
@@ -599,6 +688,12 @@ function bindHoldButton(button, onPress) {
 const startBtn = document.querySelector("#startBtn");
 startBtn.addEventListener("pointerdown", unlockAudio);
 startBtn.addEventListener("click", newGame);
+leaderboardBtn.addEventListener("click", () => openLeaderboard(false));
+closeLeaderboardBtn.addEventListener("click", closeLeaderboard);
+scoreForm.addEventListener("submit", submitScore);
+leaderboardModal.addEventListener("click", (event) => {
+  if (event.target === leaderboardModal) closeLeaderboard();
+});
 document.querySelector("#rotateBtn").addEventListener("click", turn);
 document.querySelector("#holdBtn").addEventListener("click", hold);
 bindHoldButton(document.querySelector("#leftBtn"), () => move(-1));
@@ -623,6 +718,7 @@ document.addEventListener("keydown", (event) => {
   }
   if (event.key.toLowerCase() === "c") hold();
   if (event.key.toLowerCase() === "p") paused = !paused;
+  if (event.key === "Escape") closeLeaderboard();
 });
 document.addEventListener("keyup", (event) => {
   if (event.code === "Space") stopFastDrop();
@@ -651,5 +747,6 @@ nextPiece = randPiece();
 spawn();
 running = false;
 updateHud();
+renderLeaderboard();
 showToast("READY");
 requestAnimationFrame(update);

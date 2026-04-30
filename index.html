@@ -9,7 +9,7 @@
   </head>
   <body>
     <main class="game-shell">
-      <section class="topbar" aria-label="게임 상태">
+      <section class="topbar" aria-label="Game status">
         <div>
           <span class="label">SCORE</span>
           <strong id="score">0</strong>
@@ -25,32 +25,56 @@
       </section>
 
       <section class="play-area">
-        <canvas id="board" width="300" height="600" aria-label="테트리스 게임 보드"></canvas>
+        <canvas id="board" width="300" height="600" aria-label="Tetris game board"></canvas>
         <canvas id="fx" width="300" height="600" aria-hidden="true"></canvas>
         <div class="scanline" aria-hidden="true"></div>
         <div id="toast" class="toast">READY</div>
       </section>
 
-      <section class="side-panel" aria-label="다음 블록과 보관 블록">
+      <section class="side-panel" aria-label="Hold, start, leaderboard, and next">
         <div class="mini">
           <span class="label">HOLD</span>
           <canvas id="hold" width="92" height="92"></canvas>
         </div>
-        <button id="startBtn" class="primary">START</button>
+        <div class="main-actions">
+          <button id="startBtn" class="primary">START</button>
+          <button id="leaderboardBtn" class="secondary">RANK</button>
+        </div>
         <div class="mini">
           <span class="label">NEXT</span>
           <canvas id="next" width="92" height="92"></canvas>
         </div>
       </section>
 
-      <section class="controls" aria-label="모바일 조작">
-        <button id="leftBtn" class="pad-btn" aria-label="왼쪽">‹</button>
-        <button id="rotateBtn" class="pad-btn action" aria-label="회전">↻</button>
-        <button id="rightBtn" class="pad-btn" aria-label="오른쪽">›</button>
-        <button id="dropBtn" class="pad-btn drop" aria-label="빠르게 내리기">⇣</button>
-        <button id="holdBtn" class="pad-btn hold" aria-label="블록 보관">H</button>
+      <section class="controls" aria-label="Mobile controls">
+        <button id="leftBtn" class="pad-btn" aria-label="Left">&lt;</button>
+        <button id="rotateBtn" class="pad-btn action" aria-label="Rotate">R</button>
+        <button id="rightBtn" class="pad-btn" aria-label="Right">&gt;</button>
+        <button id="dropBtn" class="pad-btn drop" aria-label="Fast drop">v</button>
+        <button id="holdBtn" class="pad-btn hold" aria-label="Hold">H</button>
       </section>
     </main>
+
+    <section id="leaderboardModal" class="modal hidden" aria-label="Leaderboard" aria-modal="true" role="dialog">
+      <div class="modal-panel">
+        <div class="modal-head">
+          <div>
+            <span class="label">NEON DROP</span>
+            <h2>LEADERBOARD</h2>
+          </div>
+          <button id="closeLeaderboardBtn" class="icon-btn" aria-label="Close">X</button>
+        </div>
+        <form id="scoreForm" class="score-form hidden">
+          <label for="playerName">NAME</label>
+          <div class="score-row">
+            <input id="playerName" maxlength="12" autocomplete="off" placeholder="PLAYER" />
+            <button type="submit" class="secondary save-btn">SAVE</button>
+          </div>
+          <p id="finalScoreText" class="final-score">SCORE 0</p>
+        </form>
+        <ol id="leaderboardList" class="leaderboard-list"></ol>
+      </div>
+    </section>
 
     <script src="game.js"></script>
   </body>
