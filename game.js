@@ -468,13 +468,35 @@ function musicTone(freq, duration, type = "triangle", volume = 0.04) {
   osc.stop(now + duration + 0.02);
 }
 
+function musicKick() {
+  if (!audioCtx || !musicGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const now = audioCtx.currentTime;
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(118, now);
+  osc.frequency.exponentialRampToValueAtTime(42, now + 0.09);
+  gain.gain.setValueAtTime(0.2, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+  osc.connect(gain).connect(musicGain);
+  osc.start(now);
+  osc.stop(now + 0.12);
+}
+
+function musicHat() {
+  musicTone(2100 + Math.random() * 700, 0.018, "square", 0.045);
+}
+
 function startBgm() {
   stopBgm();
   if (!audioCtx) return;
   musicGain = audioCtx.createGain();
-  musicGain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+  musicGain.gain.setValueAtTime(0.72, audioCtx.currentTime);
   musicGain.connect(audioCtx.destination);
   bgmStep = 0;
+  musicKick();
+  musicTone(659.25, 0.12, "square", 0.14);
+  musicTone(329.63, 0.18, "sawtooth", 0.12);
   playBgmStep();
 }
 
@@ -504,19 +526,22 @@ function playBgmStep() {
     return;
   }
 
-  const lead = [392, 466.16, 523.25, 587.33, 523.25, 466.16, 392, 349.23, 392, 523.25, 622.25, 698.46, 622.25, 523.25, 466.16, 392];
-  const bass = [98, 98, 116.54, 116.54, 130.81, 130.81, 87.31, 87.31];
+  const lead = [659.25, 0, 783.99, 659.25, 987.77, 880, 783.99, 0, 587.33, 659.25, 783.99, 880, 783.99, 659.25, 587.33, 523.25];
+  const counter = [329.63, 392, 493.88, 392, 329.63, 293.66, 329.63, 0, 440, 493.88, 523.25, 493.88, 440, 392, 329.63, 0];
+  const bass = [82.41, 82.41, 98, 98, 110, 110, 73.42, 73.42];
   const step = bgmStep % 16;
-  musicTone(lead[step], 0.12, step % 4 === 0 ? "square" : "triangle", step % 2 ? 0.05 : 0.072);
-  if (step % 2 === 0) musicTone(bass[(bgmStep / 2) % bass.length | 0], 0.2, "sawtooth", 0.045);
-  if (step % 4 === 2) musicTone(1760, 0.028, "square", 0.025);
+  if (lead[step]) musicTone(lead[step], 0.13, step % 4 === 0 ? "square" : "triangle", 0.12);
+  if (counter[step] && step % 2 === 1) musicTone(counter[step], 0.1, "triangle", 0.055);
+  if (step % 2 === 0) musicTone(bass[(bgmStep / 2) % bass.length | 0], 0.22, "sawtooth", 0.115);
+  if (step % 4 === 0) musicKick();
+  if (step % 2 === 1) musicHat();
   bgmStep++;
-  bgmTimer = setTimeout(playBgmStep, Math.max(92, 150 - level * 4));
+  bgmTimer = setTimeout(playBgmStep, Math.max(86, 132 - level * 3));
 }
 
 function unlockAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === "suspended") return audioCtx.resume();
+  if (audioCtx.state === "suspended") return audioCtx.resume().catch(() => {});
   return Promise.resolve();
 }
 
