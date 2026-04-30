@@ -51,11 +51,13 @@ button {
 .game-shell {
   width: min(100vw, 520px);
   height: 100svh;
+  height: 100dvh;
   margin: 0 auto;
-  padding: max(8px, env(safe-area-inset-top)) 10px max(8px, env(safe-area-inset-bottom));
+  padding: max(6px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
-  gap: 8px;
+  grid-template-rows: 44px minmax(0, 1fr) 52px 52px;
+  gap: 6px;
+  overflow: hidden;
 }
 
 .topbar,
@@ -77,8 +79,9 @@ button {
 }
 
 .topbar > div {
-  min-height: 48px;
-  padding: 7px 9px;
+  min-height: 0;
+  height: 44px;
+  padding: 5px 8px;
   border-radius: 8px;
 }
 
@@ -92,8 +95,8 @@ button {
 
 strong {
   display: block;
-  margin-top: 3px;
-  font-size: clamp(20px, 7vw, 34px);
+  margin-top: 2px;
+  font-size: clamp(18px, 6vw, 28px);
   line-height: 1;
   text-shadow: 0 0 16px rgba(0, 231, 255, 0.58);
 }
@@ -103,12 +106,15 @@ strong {
   min-height: 0;
   display: grid;
   place-items: center;
+  overflow: hidden;
 }
 
 #board,
 #fx {
-  width: min(84vw, 360px, calc((100svh - 222px) / 2));
-  height: auto;
+  width: auto;
+  height: min(100%, 168vw);
+  max-width: 84vw;
+  max-height: 100%;
   aspect-ratio: 1 / 2;
   border-radius: 8px;
 }
@@ -130,8 +136,10 @@ strong {
 }
 
 .scanline {
-  width: min(84vw, 360px, calc((100svh - 222px) / 2));
-  height: auto;
+  width: auto;
+  height: min(100%, 168vw);
+  max-width: 84vw;
+  max-height: 100%;
   aspect-ratio: 1 / 2;
   border-radius: 8px;
   overflow: hidden;
@@ -175,9 +183,9 @@ strong {
 }
 
 .mini {
-  height: 62px;
+  height: 52px;
   border-radius: 8px;
-  padding: 6px;
+  padding: 5px;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
@@ -185,14 +193,14 @@ strong {
 }
 
 .mini canvas {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   justify-self: end;
 }
 
 .primary {
   min-width: 100px;
-  height: 52px;
+  height: 46px;
   border-radius: 8px;
   background: linear-gradient(135deg, var(--hot), #7b4dff 52%, var(--cyan));
   color: #fff;
@@ -203,14 +211,15 @@ strong {
 .controls {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 7px;
-  height: 58px;
+  gap: 6px;
+  height: 52px;
+  min-height: 0;
 }
 
 .pad-btn {
   border-radius: 8px;
   color: white;
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 900;
   line-height: 1;
 }
@@ -261,42 +270,43 @@ strong {
 
 @media (max-height: 690px) {
   .game-shell {
-    gap: 6px;
+    grid-template-rows: 38px minmax(0, 1fr) 44px 48px;
+    gap: 5px;
     padding-left: 8px;
     padding-right: 8px;
   }
 
   .topbar > div {
-    min-height: 46px;
-    padding: 6px 8px;
+    height: 38px;
+    padding: 4px 7px;
   }
 
   strong {
-    font-size: clamp(18px, 6vw, 28px);
+    font-size: clamp(16px, 5.4vw, 24px);
   }
 
   .controls {
-    height: 50px;
+    height: 48px;
   }
 
   .mini {
-    height: 54px;
+    height: 44px;
     padding: 5px;
   }
 
   .mini canvas {
-    width: 42px;
-    height: 42px;
+    width: 34px;
+    height: 34px;
   }
 
   .primary {
     min-width: 86px;
-    height: 44px;
+    height: 40px;
   }
 
   #board,
   #fx,
   .scanline {
-    width: min(82vw, calc((100svh - 196px) / 2));
+    max-width: 80vw;
   }
 }

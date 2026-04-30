@@ -434,7 +434,7 @@ function musicTone(freq, duration, type = "triangle", volume = 0.04) {
   osc.type = type;
   osc.frequency.setValueAtTime(freq, now);
   gain.gain.setValueAtTime(0.001, now);
-  gain.gain.exponentialRampToValueAtTime(volume, now + 0.012);
+  gain.gain.exponentialRampToValueAtTime(volume, now + 0.01);
   gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
   osc.connect(gain).connect(musicGain);
   osc.start(now);
@@ -445,7 +445,7 @@ function startBgm() {
   stopBgm();
   if (!audioCtx) return;
   musicGain = audioCtx.createGain();
-  musicGain.gain.setValueAtTime(0.035, audioCtx.currentTime);
+  musicGain.gain.setValueAtTime(0.12, audioCtx.currentTime);
   musicGain.connect(audioCtx.destination);
   bgmStep = 0;
   playBgmStep();
@@ -467,6 +467,11 @@ function stopBgm() {
 
 function playBgmStep() {
   if (!running || !audioCtx) return;
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume();
+    bgmTimer = setTimeout(playBgmStep, 120);
+    return;
+  }
   if (paused) {
     bgmTimer = setTimeout(playBgmStep, 180);
     return;
@@ -475,20 +480,23 @@ function playBgmStep() {
   const lead = [392, 466.16, 523.25, 587.33, 523.25, 466.16, 392, 349.23, 392, 523.25, 622.25, 698.46, 622.25, 523.25, 466.16, 392];
   const bass = [98, 98, 116.54, 116.54, 130.81, 130.81, 87.31, 87.31];
   const step = bgmStep % 16;
-  musicTone(lead[step], 0.115, step % 4 === 0 ? "square" : "triangle", step % 2 ? 0.025 : 0.035);
-  if (step % 2 === 0) musicTone(bass[(bgmStep / 2) % bass.length | 0], 0.18, "sawtooth", 0.022);
-  if (step % 4 === 2) musicTone(1760, 0.025, "square", 0.012);
+  musicTone(lead[step], 0.12, step % 4 === 0 ? "square" : "triangle", step % 2 ? 0.05 : 0.072);
+  if (step % 2 === 0) musicTone(bass[(bgmStep / 2) % bass.length | 0], 0.2, "sawtooth", 0.045);
+  if (step % 4 === 2) musicTone(1760, 0.028, "square", 0.025);
   bgmStep++;
   bgmTimer = setTimeout(playBgmStep, Math.max(92, 150 - level * 4));
 }
 
 function unlockAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === "suspended") audioCtx.resume();
+  if (audioCtx.state === "suspended") return audioCtx.resume();
+  return Promise.resolve();
 }
 
 function newGame() {
-  unlockAudio();
+  unlockAudio().then(() => {
+    if (running) startBgm();
+  });
   dropToken++;
   acceleratedDropping = false;
   grid = emptyGrid();
@@ -507,7 +515,6 @@ function newGame() {
   showToast("GO!");
   beep(660, 0.08, "triangle", 0.08);
   beep(990, 0.06, "sine", 0.045);
-  startBgm();
 }
 
 function gameOver() {
@@ -538,7 +545,9 @@ function bindHoldButton(button, onPress) {
   button.addEventListener("pointerleave", stop);
 }
 
-document.querySelector("#startBtn").addEventListener("click", newGame);
+const startBtn = document.querySelector("#startBtn");
+startBtn.addEventListener("pointerdown", unlockAudio);
+startBtn.addEventListener("click", newGame);
 document.querySelector("#rotateBtn").addEventListener("click", turn);
 document.querySelector("#dropBtn").addEventListener("click", acceleratedDrop);
 document.querySelector("#holdBtn").addEventListener("click", hold);
