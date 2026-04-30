@@ -63,7 +63,7 @@ button {
 .topbar,
 .side-panel {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
   gap: 8px;
 }
@@ -81,7 +81,9 @@ button {
 .topbar > div {
   min-height: 0;
   height: 42px;
-  padding: 5px 8px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 5px 7px;
   border-radius: 8px;
 }
 
@@ -96,8 +98,12 @@ button {
 strong {
   display: block;
   margin-top: 2px;
-  font-size: clamp(18px, 6vw, 28px);
+  max-width: 100%;
+  overflow: hidden;
+  font-size: clamp(16px, 5.2vw, 25px);
   line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   text-shadow: 0 0 16px rgba(0, 231, 255, 0.58);
 }
 
@@ -279,11 +285,11 @@ strong {
 
   .topbar > div {
     height: 36px;
-    padding: 4px 7px;
+    padding: 4px 6px;
   }
 
   strong {
-    font-size: clamp(16px, 5.4vw, 24px);
+    font-size: clamp(14px, 4.8vw, 20px);
   }
 
   .controls {
